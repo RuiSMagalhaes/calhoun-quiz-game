@@ -4,21 +4,22 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
 	csvFilename := flag.String("csv", "problems.csv", "A csv file in the format of 'question,answer' ")
+	timeLimit := flag.Int("limit", 30, "the time for the quiz in seconds")
 	flag.Parse()
 
-	readCsvFile(csvFilename)
+	readCsvFile(csvFilename, timeLimit)
 
 }
 
-func readCsvFile(filename *string) {
+func readCsvFile(filename *string, timeLimit *int) {
 	// Open the file
 	csvFile, err := os.Open(*filename) //return a *FILE and an ERROR
 	if err != nil {
@@ -30,37 +31,31 @@ func readCsvFile(filename *string) {
 
 	// Iterate through the lines
 	score := 0
-	counter := 0
+	multiSlice, _ := reader.ReadAll()
 
-	for {
-		arrayLine, err := reader.Read()
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
 
-		if err == io.EOF {
-			break
+	for i, arrayLine := range multiSlice {
+		fmt.Printf("question %v: %s ? \n", i+1, arrayLine[0])
+		answerChanel := make(chan string)
+		go func() {
+			var answer string
+			fmt.Scanf("%s\n", &answer)
+			answerChanel <- answer
+		}()
+
+		select {
+		case <-timer.C:
+			fmt.Printf("Your final score is: %v/%v !!\n", score, len(multiSlice))
+			return
+		case answer := <-answerChanel:
+			if answer == strings.TrimSpace(arrayLine[1]) {
+				score++
+			}
 		}
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Printf("question : %s ? \n", arrayLine[0])
-
-		var i string
-		fmt.Scanf("%s\n", &i)
-
-		if i == strings.TrimSpace(arrayLine[1]) {
-			score++
-		}
-
-		counter++
 
 	}
 
-	fmt.Printf("Your final score is: %v/%v !!\n", score, counter)
+	fmt.Printf("Your final score is: %v/%v !!\n", score, len(multiSlice))
 
 }
-
-// TODO :
-//		* add a timer
-//		* add flag for timer with default of 30s
-// 		* Add an option (a new flag) to shuffle the quiz order each time it is run.
