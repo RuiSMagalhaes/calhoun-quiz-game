@@ -2,17 +2,27 @@ package main
 
 import (
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
-func readCsvFile(filepath string) {
+func main() {
+	csvFilename := flag.String("csv", "problems.csv", "A csv file in the format of 'question,answer' ")
+	flag.Parse()
+
+	readCsvFile(csvFilename)
+
+}
+
+func readCsvFile(filename *string) {
 	// Open the file
-	csvFile, err := os.Open(filepath) //return a *FILE and an ERROR
+	csvFile, err := os.Open(*filename) //return a *FILE and an ERROR
 	if err != nil {
-		log.Fatal("Unable to read the quiz file provided!", err)
+		log.Fatal("error: ", err)
 	}
 
 	// Parse the file
@@ -36,18 +46,13 @@ func readCsvFile(filepath string) {
 		fmt.Printf("question : %s ? \n", arrayLine[0])
 
 		var i string
-		_, error := fmt.Scanf("%s", &i)
+		fmt.Scanf("%s\n", &i)
 
-		if error != nil {
-			log.Print("Scan for i failed, due to ", error)
-			return
+		if i == strings.TrimSpace(arrayLine[1]) {
+			score++
 		}
 
-		if i == arrayLine[1] {
-			score = score + 1
-		}
-
-		counter = counter + 1
+		counter++
 
 	}
 
@@ -55,14 +60,7 @@ func readCsvFile(filepath string) {
 
 }
 
-func main() {
-	readCsvFile("problems.csv")
-
-}
-
 // TODO :
-//		* clean spaces and capitalizations of the user answer
-// 		* add flag for filepath with a default of problems.csv
 //		* add a timer
 //		* add flag for timer with default of 30s
 // 		* Add an option (a new flag) to shuffle the quiz order each time it is run.
